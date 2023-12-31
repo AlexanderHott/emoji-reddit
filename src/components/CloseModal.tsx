@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { type FC } from "react";
 import { Button } from "./ui/button";
 
-interface CloseModalProps {}
+// interface CloseModalProps {}
 
-const CloseModal: FC<CloseModalProps> = ({}) => {
+const CloseModal: FC /*<CloseModalProps>*/ = ({}) => {
   const router = useRouter();
 
   return (
