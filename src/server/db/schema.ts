@@ -30,7 +30,7 @@ export const subreddits = mysqlTable(
       .primaryKey()
       .$defaultFn(nanoid),
     name: varchar("name", { length: 255 }).notNull().unique(),
-    createdAt: timestamp("created_at").defaultNow(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
     // updatedAt: timestamp("updated_at").default(
     //   sql`CURRENT_TIMESTAMP(3) on update CURRENT_TIMESTAMP(3)`,
     // ),
