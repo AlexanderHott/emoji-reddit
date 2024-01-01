@@ -3,6 +3,8 @@ import {
   bigint,
   index,
   int,
+  json,
+  mysqlEnum,
   mysqlTableCreator,
   primaryKey,
   text,
@@ -19,23 +21,161 @@ import { type AdapterAccount } from "next-auth/adapters";
  */
 export const mysqlTable = mysqlTableCreator((name) => `emoji-reddit_${name}`);
 
-export const posts = mysqlTable(
-  "post",
+export const subreddits = mysqlTable(
+  "subreddit",
   {
-    id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
-    name: varchar("name", { length: 256 }),
-    createdById: varchar("createdById", { length: 255 }).notNull(),
-    createdAt: timestamp("created_at")
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updatedAt").onUpdateNow(),
+    id: varchar("id", { length: 255 }).notNull().primaryKey(),
+    name: varchar("name", { length: 255 }).notNull().unique(),
+    createdAt: timestamp("created_at").defaultNow(),
+    // updatedAt: timestamp("updated_at").default(
+    //   sql`CURRENT_TIMESTAMP(3) on update CURRENT_TIMESTAMP(3)`,
+    // ),
+    ownerId: varchar("owner_id", { length: 255 }).notNull().primaryKey(),
   },
-  (example) => ({
-    createdByIdIdx: index("createdById_idx").on(example.createdById),
-    nameIndex: index("name_idx").on(example.name),
+  (subreddit) => ({
+    nameIdx: index("name_idx").on(subreddit.name),
+    ownerIdIdx: index("ownerId_idx").on(subreddit.ownerId),
   }),
 );
 
+export const subredditsRelations = relations(subreddits, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [subreddits.ownerId],
+    references: [users.id],
+  }),
+  posts: many(posts),
+  subscribers: many(subscriptions),
+}));
+
+export const subscriptions = mysqlTable(
+  "subscription",
+  {
+    userId: varchar("userId", { length: 255 }).notNull(),
+    subredditId: varchar("subredditId", { length: 255 }).notNull(),
+  },
+  (subscription) => ({
+    compoundKey: primaryKey(subscription.userId, subscription.subredditId),
+  }),
+);
+
+export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [subscriptions.userId],
+    references: [users.id],
+  }),
+  subreddit: one(subreddits, {
+    fields: [subscriptions.subredditId],
+    references: [subreddits.id],
+  }),
+}));
+
+export const posts = mysqlTable("post", {
+  id: varchar("id", { length: 255 }).notNull().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull().unique(),
+  content: json("content"),
+  createdAt: timestamp("created_at").defaultNow(),
+  // updatedAt: timestamp("updated_at").default(
+  //   sql`CURRENT_TIMESTAMP(3) on update CURRENT_TIMESTAMP(3)`,
+  // ),
+  subredditId: varchar("subredditId", { length: 255 }).notNull(),
+  authorId: varchar("authorId", { length: 255 }).notNull(),
+});
+
+export const postsRelations = relations(posts, ({ one, many }) => ({
+  author: one(users, {
+    fields: [posts.authorId],
+    references: [users.id],
+  }),
+  subreddit: one(subreddits, {
+    fields: [posts.subredditId],
+    references: [subreddits.id],
+  }),
+  comments: many(comments),
+}));
+
+export const postVotes = mysqlTable(
+  "postVote",
+  {
+    userId: varchar("user_id", { length: 255 }).notNull(),
+    postId: varchar("post_id", { length: 255 }).notNull(),
+    type: mysqlEnum("type", ["UP", "DOWN"]),
+  },
+  (postVote) => ({
+    compoundKey: primaryKey(postVote.userId, postVote.postId),
+  }),
+);
+
+export const postVotesRelations = relations(postVotes, ({ one }) => ({
+  user: one(users, {
+    fields: [postVotes.userId],
+    references: [users.id],
+  }),
+  post: one(posts, {
+    fields: [postVotes.userId],
+    references: [posts.id],
+  }),
+}));
+
+export const comments = mysqlTable("comment", {
+  id: varchar("id", { length: 255 }).notNull().primaryKey(),
+  text: varchar("text", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  // updatedAt: timestamp("updated_at").default(
+  //   sql`CURRENT_TIMESTAMP(3) on update CURRENT_TIMESTAMP(3)`,
+  // ),
+  authorId: varchar("author_id", { length: 255 }).notNull(),
+  postId: varchar("post_id", { length: 255 }).notNull(),
+
+  replyToId: varchar("reply_to_id", { length: 255 }).notNull(),
+});
+
+export const commentsRelations = relations(comments, ({ one, many }) => ({
+  author: one(users, {
+    fields: [comments.authorId],
+    references: [users.id],
+  }),
+  post: one(posts, {
+    fields: [comments.postId],
+    references: [posts.id],
+  }),
+  replies: many(
+    comments,
+    // { relationName: "replyTo", }
+  ),
+  replyTo: one(comments, {
+    fields: [comments.replyToId],
+    references: [comments.id],
+    // relationName: "replyTo",
+  }),
+  votes: many(commentVotes),
+}));
+
+export const commentVotes = mysqlTable(
+  "commentVote",
+  {
+    userId: varchar("user_id", { length: 255 }).notNull(),
+    commentId: varchar("comment_id", { length: 255 }).notNull(),
+    type: mysqlEnum("type", ["UP", "DOWN"]),
+  },
+  (commentVote) => ({
+    compoundKey: primaryKey(commentVote.userId, commentVote.commentId),
+  }),
+);
+
+export const commentVotesRelations = relations(commentVotes, ({ one }) => ({
+  user: one(users, {
+    fields: [commentVotes.userId],
+    references: [users.id],
+  }),
+  comment: one(comments, {
+    fields: [commentVotes.userId],
+    references: [comments.id],
+  }),
+}));
+
+/**
+ * Next-auth
+ */
 export const users = mysqlTable("user", {
   id: varchar("id", { length: 255 }).notNull().primaryKey(),
   name: varchar("name", { length: 255 }),
@@ -53,6 +193,12 @@ export type NewUser = typeof users.$inferInsert; // insert type
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
   sessions: many(sessions),
+  posts: many(posts),
+  comments: many(comments),
+  ownedSubreddits: many(subreddits),
+  subscriptions: many(subscriptions),
+  postVotes: many(postVotes),
+  commentVotes: many(commentVotes),
 }));
 
 export const accounts = mysqlTable(
