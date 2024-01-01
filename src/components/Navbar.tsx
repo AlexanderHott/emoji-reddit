@@ -11,7 +11,7 @@ export default async function Navbar() {
       <div className="container mx-auto flex h-full max-w-7xl items-center justify-between gap-2">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-2xl">🗿</span>
-          <p className="text-zinc hidden text-sm font-medium md:block">
+          <p className="hidden text-sm font-medium text-zinc-700 md:block">
             Emoji Reddit
           </p>
         </Link>
