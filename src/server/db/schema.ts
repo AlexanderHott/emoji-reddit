@@ -95,6 +95,7 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
     references: [subreddits.id],
   }),
   comments: many(comments),
+  votes: many(postVotes),
 }));
 
 export const postVotes = mysqlTable(
@@ -115,7 +116,7 @@ export const postVotesRelations = relations(postVotes, ({ one }) => ({
     references: [users.id],
   }),
   post: one(posts, {
-    fields: [postVotes.userId],
+    fields: [postVotes.postId],
     references: [posts.id],
   }),
 }));
@@ -169,7 +170,7 @@ export const commentVotesRelations = relations(commentVotes, ({ one }) => ({
     references: [users.id],
   }),
   comment: one(comments, {
-    fields: [commentVotes.userId],
+    fields: [commentVotes.commentId],
     references: [comments.id],
   }),
 }));

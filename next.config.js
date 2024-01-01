@@ -12,6 +12,10 @@ const config = {
       { hostname: "uploadthing.com" },
     ],
   },
+  // TODO: re-enable when done
+  // experimental: {
+  //   typedRoutes: true,
+  // },
 };
 
 export default config;
