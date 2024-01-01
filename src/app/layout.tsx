@@ -3,6 +3,7 @@ import { Toaster } from "~/components/ui/toaster";
 import { cn } from "~/lib/utils";
 import "~/styles/globals.css";
 import { Inter } from "next/font/google";
+import Providers from "~/components/Providers";
 
 export const metadata = {
   title: "Emoji Reddit",
@@ -27,12 +28,14 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-screen bg-slate-50 pt-12 antialiased">
-        <Navbar />
-        {authModal}
-        <div className="container mx-auto h-full max-w-7xl pt-12">
-          {children}
-        </div>
-        <Toaster />
+        <Providers>
+          <Navbar />
+          {authModal}
+          <div className="container mx-auto h-full max-w-7xl pt-12">
+            {children}
+          </div>
+          <Toaster />
+        </Providers>
       </body>
     </html>
   );

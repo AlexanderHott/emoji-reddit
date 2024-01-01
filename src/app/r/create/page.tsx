@@ -2,27 +2,28 @@
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { toast } from "~/hooks/use-toast";
 import { useCustomToasts } from "~/hooks/use-custom-toasts";
-import { CreateSubredditPayload } from "~/lib/validators/subreddit";
-import { useMutation } from "~tanstack/react-query";
+import { type CreateSubredditPayload } from "~/lib/validators/subreddit";
+import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useToast } from "~/components/ui/use-toast";
 
 export default function CreateSubredditPage() {
   const router = useRouter();
   const [input, setInput] = useState<string>("");
   const { loginToast } = useCustomToasts();
+  const { toast } = useToast();
 
-  const { mutate: createCommunity, isLoading } = useMutation({
+  const { mutate: createCommunity, isPending } = useMutation({
     mutationFn: async () => {
       const payload: CreateSubredditPayload = {
         name: input,
       };
 
-      const { data } = await axios.post("/api/subreddit", payload);
-      return data as string;
+      const { data } = await axios.post<string>("/api/subreddit", payload);
+      return data;
     },
     onError: (err) => {
       if (err instanceof AxiosError) {
@@ -86,14 +87,23 @@ export default function CreateSubredditPage() {
 
         <div className="flex justify-end gap-4">
           <Button
-            disabled={isLoading}
+            disabled={isPending}
+            variant="subtle"
+            onClick={() =>
+              toast({ title: "h", description: "asdf", variant: "default" })
+            }
+          >
+            Toast Test
+          </Button>
+          <Button
+            disabled={isPending}
             variant="subtle"
             onClick={() => router.back()}
           >
             Cancel
           </Button>
           <Button
-            isLoading={isLoading}
+            isLoading={isPending}
             disabled={input.length === 0}
             onClick={() => createCommunity()}
           >

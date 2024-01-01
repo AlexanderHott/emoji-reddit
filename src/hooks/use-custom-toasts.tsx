@@ -1,5 +1,5 @@
 import { buttonVariants } from "~/components/ui/button";
-import { toast } from "~/hooks/use-toast";
+import { toast } from "~/components/ui/use-toast";
 import Link from "next/link";
 
 export const useCustomToasts = () => {

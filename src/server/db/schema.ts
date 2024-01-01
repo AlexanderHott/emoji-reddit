@@ -12,6 +12,7 @@ import {
   varchar,
 } from "drizzle-orm/mysql-core";
 import { type AdapterAccount } from "next-auth/adapters";
+import { nanoid } from "nanoid";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -24,13 +25,16 @@ export const mysqlTable = mysqlTableCreator((name) => `emoji-reddit_${name}`);
 export const subreddits = mysqlTable(
   "subreddit",
   {
-    id: varchar("id", { length: 255 }).notNull().primaryKey(),
+    id: varchar("id", { length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(nanoid),
     name: varchar("name", { length: 255 }).notNull().unique(),
     createdAt: timestamp("created_at").defaultNow(),
     // updatedAt: timestamp("updated_at").default(
     //   sql`CURRENT_TIMESTAMP(3) on update CURRENT_TIMESTAMP(3)`,
     // ),
-    ownerId: varchar("owner_id", { length: 255 }).notNull().primaryKey(),
+    ownerId: varchar("owner_id", { length: 255 }).notNull(),
   },
   (subreddit) => ({
     nameIdx: index("name_idx").on(subreddit.name),
@@ -70,7 +74,7 @@ export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
 }));
 
 export const posts = mysqlTable("post", {
-  id: varchar("id", { length: 255 }).notNull().primaryKey(),
+  id: varchar("id", { length: 255 }).notNull().primaryKey().$defaultFn(nanoid),
   title: varchar("title", { length: 255 }).notNull().unique(),
   content: json("content"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -117,7 +121,7 @@ export const postVotesRelations = relations(postVotes, ({ one }) => ({
 }));
 
 export const comments = mysqlTable("comment", {
-  id: varchar("id", { length: 255 }).notNull().primaryKey(),
+  id: varchar("id", { length: 255 }).notNull().primaryKey().$defaultFn(nanoid),
   text: varchar("text", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   // updatedAt: timestamp("updated_at").default(
@@ -138,14 +142,11 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
     fields: [comments.postId],
     references: [posts.id],
   }),
-  replies: many(
-    comments,
-    // { relationName: "replyTo", }
-  ),
+  replies: many(comments, { relationName: "replyTo" }),
   replyTo: one(comments, {
     fields: [comments.replyToId],
     references: [comments.id],
-    // relationName: "replyTo",
+    relationName: "replyTo",
   }),
   votes: many(commentVotes),
 }));
