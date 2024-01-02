@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type EditorJS from "@editorjs/editorjs";
 import { uploadFiles } from "~/lib/uploadthing";
+import { toast } from "./ui/use-toast";
 
 export default function Editor({ subredditId }: { subredditId: string }) {
   const {
@@ -27,6 +28,18 @@ export default function Editor({ subredditId }: { subredditId: string }) {
       setIsMounted(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (Object.keys(errors).length) {
+      for (const [_key, value] of Object.entries(errors)) {
+        toast({
+          title: "Something went wrong",
+          description: (value as { message: string }).message,
+          variant: "destructive",
+        });
+      }
+    }
+  }, [errors]);
 
   const initializeEditor = useCallback(async () => {
     const EditorJS = (await import("@editorjs/editorjs")).default;
@@ -69,13 +82,10 @@ export default function Editor({ subredditId }: { subredditId: string }) {
             class: ImageTool,
             config: {
               uploader: {
-                async uploadByFile(file: File) {
-                  const res = (
-                    await uploadFiles("imageUploader", {
-                      files: [file],
-                    })
-                  )[0]!;
-                  return { success: 1, url: res.url };
+                uploadByFile(file: File) {
+                  return uploadFiles("imageUploader", { files: [file] }).then(
+                    (res) => ({ success: 1, file: { url: res[0]!.url } }),
+                  );
                 },
               },
             },
@@ -98,12 +108,17 @@ export default function Editor({ subredditId }: { subredditId: string }) {
   useEffect(() => {
     const init = async () => {
       await initializeEditor();
-      // setTimeout(() => {
-      //   ref.current?.focus();
-      // });
+      setTimeout(() => {
+        ref.current?.focus();
+      }, 0);
     };
     if (isMounted) {
       init().catch((err) => console.error("Error initializing editor", err));
+
+      return () => {
+        ref.current?.destroy();
+        ref.current = undefined;
+      };
     }
   }, [isMounted, initializeEditor]);
   async function onSubmit(data: PostCreationRequest) {
