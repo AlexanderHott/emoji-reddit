@@ -20,7 +20,7 @@ export default function Post({
   currentVote?: PostVote;
   subredditName: string;
 }) {
-  const pRef = useRef<HTMLParagraphElement>();
+  const pRef = useRef<HTMLDivElement>(null);
   return (
     <div className="rounded-md bg-white shadow">
       <div className="flex justify-between px-6 py-4">

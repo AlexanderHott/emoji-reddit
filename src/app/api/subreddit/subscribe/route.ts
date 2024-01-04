@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const subscription = await db
       .insert(subscriptions)
       .values({ userId: session.user.id, subredditId });
-    return subscription.insertId;
+    return new Response(subscription.insertId);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return new Response(error.message, { status: 400 });
