@@ -4,6 +4,7 @@ import { getServerAuthSession } from "~/server/auth";
 import { db } from "~/server/db";
 import { subreddits, subscriptions } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 export async function POST(req: Request) {
   try {
@@ -30,15 +31,18 @@ export async function POST(req: Request) {
     }
 
     // create subreddit and associate it with the user
+    const subredditId = nanoid();
     const subreddit = await db.insert(subreddits).values({
+      id: subredditId,
       name,
       ownerId: session.user.id,
     });
 
     // creator also has to be subscribed
+    console.log("Created subreddit with id", subreddit.insertId);
     await db.insert(subscriptions).values({
       userId: session.user.id,
-      subredditId: subreddit.insertId,
+      subredditId,
     });
 
     return new Response(name);

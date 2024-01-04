@@ -23,7 +23,7 @@ export default function UserAuthForm({
       console.log("Error logging in with google", err);
       toast({
         title: "There was a problem.",
-        description: "An error occured when logging in with Google.",
+        description: "An error occurred when logging in with Google.",
         variant: "destructive",
       });
     } finally {

@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import MiniCreatePost from "~/components/MiniCreatePost";
+import PostFeed from "~/components/PostFeed";
 import { getServerAuthSession } from "~/server/auth";
 import { db } from "~/server/db";
 import { subreddits } from "~/server/db/schema";
@@ -19,11 +20,11 @@ export default async function SubredditPage({
         with: {
           author: true,
           comments: true,
-          // votes: true,
+          votes: true,
           subreddit: true,
         },
 
-        limit: 2,
+        limit: 2, // TODO: magic number
       },
     },
   });
@@ -36,6 +37,7 @@ export default async function SubredditPage({
         r/{subreddit.name}
       </h1>
       <MiniCreatePost session={session} />
+      <PostFeed initialPosts={subreddit.posts} subredditName={subreddit.name} />
     </>
   );
 }

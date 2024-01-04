@@ -11,3 +11,5 @@
 - [ ] more server components
 - [ ] move to server actions
 - [ ] new shadcn Sonner tosts
+
+- [ ] tfrs post recommendations

@@ -8,6 +8,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type EditorJS from "@editorjs/editorjs";
 import { uploadFiles } from "~/lib/uploadthing";
 import { toast } from "./ui/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function Editor({ subredditId }: { subredditId: string }) {
   const {
@@ -121,9 +124,46 @@ export default function Editor({ subredditId }: { subredditId: string }) {
       };
     }
   }, [isMounted, initializeEditor]);
+
+  const pathname = usePathname();
+  const router = useRouter();
+  const { mutate: publishPost } = useMutation({
+    mutationFn: async (payload: PostCreationRequest) => {
+      const { data } = await axios.post<string>(
+        "/api/subreddit/post/create",
+        payload,
+      );
+      return data;
+    },
+    onError: () => {
+      return toast({
+        title: "Something went wrong",
+        description: "Your post could not be published, try again later.",
+        variant: "destructive",
+      });
+    },
+    onSuccess: async () => {
+      const newPathname = pathname.split("/").slice(0, -1).join("/");
+      router.push(newPathname);
+      router.refresh();
+      return toast({ description: "Your post was created" });
+    },
+  });
+
   async function onSubmit(data: PostCreationRequest) {
+    const blocks = await ref.current?.save();
+    const payload: PostCreationRequest = {
+      title: data.title,
+      content: blocks,
+      subredditId,
+    };
+    publishPost(payload);
+
     console.log("submit", data);
   }
+
+  if (!isMounted) return null;
+
   const { ref: titleRef, ...rest } = register("title");
 
   return (

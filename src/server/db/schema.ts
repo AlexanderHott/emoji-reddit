@@ -28,7 +28,7 @@ export const subreddits = mysqlTable(
     id: varchar("id", { length: 255 })
       .notNull()
       .primaryKey()
-      .$defaultFn(nanoid),
+      .$defaultFn(() => nanoid()),
     name: varchar("name", { length: 255 }).notNull().unique(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     // updatedAt: timestamp("updated_at").default(
@@ -51,6 +51,8 @@ export const subredditsRelations = relations(subreddits, ({ one, many }) => ({
   subscribers: many(subscriptions),
 }));
 
+export type Subreddit = typeof subreddits.$inferSelect;
+
 export const subscriptions = mysqlTable(
   "subscription",
   {
@@ -72,9 +74,13 @@ export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
     references: [subreddits.id],
   }),
 }));
+export type Subscription = typeof subscriptions.$inferSelect;
 
 export const posts = mysqlTable("post", {
-  id: varchar("id", { length: 255 }).notNull().primaryKey().$defaultFn(nanoid),
+  id: varchar("id", { length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => nanoid()),
   title: varchar("title", { length: 255 }).notNull().unique(),
   content: json("content"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -98,12 +104,17 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
   votes: many(postVotes),
 }));
 
+export type Post = typeof posts.$inferSelect;
+
+const VOTE_OPTIONS = ["UP", "DOWN"] as const;
+export type Vote = (typeof VOTE_OPTIONS)[number];
+
 export const postVotes = mysqlTable(
   "postVote",
   {
     userId: varchar("user_id", { length: 255 }).notNull(),
     postId: varchar("post_id", { length: 255 }).notNull(),
-    type: mysqlEnum("type", ["UP", "DOWN"]),
+    type: mysqlEnum("type", VOTE_OPTIONS),
   },
   (postVote) => ({
     compoundKey: primaryKey(postVote.userId, postVote.postId),
@@ -120,9 +131,13 @@ export const postVotesRelations = relations(postVotes, ({ one }) => ({
     references: [posts.id],
   }),
 }));
+export type PostVote = typeof postVotes.$inferSelect;
 
 export const comments = mysqlTable("comment", {
-  id: varchar("id", { length: 255 }).notNull().primaryKey().$defaultFn(nanoid),
+  id: varchar("id", { length: 255 })
+    .notNull()
+    .primaryKey()
+    .$defaultFn(() => nanoid()),
   text: varchar("text", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   // updatedAt: timestamp("updated_at").default(
@@ -151,13 +166,14 @@ export const commentsRelations = relations(comments, ({ one, many }) => ({
   }),
   votes: many(commentVotes),
 }));
+export type Comment = typeof comments.$inferSelect;
 
 export const commentVotes = mysqlTable(
   "commentVote",
   {
     userId: varchar("user_id", { length: 255 }).notNull(),
     commentId: varchar("comment_id", { length: 255 }).notNull(),
-    type: mysqlEnum("type", ["UP", "DOWN"]),
+    type: mysqlEnum("type", VOTE_OPTIONS),
   },
   (commentVote) => ({
     compoundKey: primaryKey(commentVote.userId, commentVote.commentId),
@@ -175,6 +191,7 @@ export const commentVotesRelations = relations(commentVotes, ({ one }) => ({
   }),
 }));
 
+export type CommentVote = typeof commentVotes.$inferSelect;
 /**
  * Next-auth
  */
