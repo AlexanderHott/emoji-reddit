@@ -13,6 +13,8 @@ import axios from "axios";
 import { useSession } from "next-auth/react";
 import Post from "~/components/Post";
 import { Loader2 } from "lucide-react";
+import { INFINITE_SCROLL_PAGINATION_RESULTS } from "~/config";
+import { Button } from "./ui/button";
 
 export type ExtendedPost = PostT & {
   subreddit: Subreddit;
@@ -20,14 +22,15 @@ export type ExtendedPost = PostT & {
   author: User;
   comments: Comment[];
 };
-const INFINITE_SCROLL_PAGINATION_RESULTS = 2;
 
 export default function PostFeed({
   initialPosts,
   subredditName,
+  subredditId,
 }: {
   initialPosts: ExtendedPost[];
   subredditName: string;
+  subredditId: string;
 }) {
   const lastPostRef = useRef<HTMLLIElement>(null);
   const { ref, entry } = useIntersection({
@@ -39,7 +42,7 @@ export default function PostFeed({
     queryFn: async ({ pageParam }) => {
       const query =
         `/api/posts?limit=${INFINITE_SCROLL_PAGINATION_RESULTS}&page=${pageParam}` +
-        (!!subredditName ? `&subredditName=${subredditName}` : "");
+        (!!subredditId ? `&subredditId=${subredditId}` : "");
 
       const { data } = await axios.get<ExtendedPost[]>(query);
       return data;
@@ -93,11 +96,18 @@ export default function PostFeed({
         }
       })}
 
-      {isFetchingNextPage && (
+      {/*{isFetchingNextPage && (
         <li className="flex justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
         </li>
-      )}
+      )}*/}
+      <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+        {isFetchingNextPage ? (
+          <Loader2 className="h-4 w-4 animate-spin text-white" />
+        ) : (
+          "Fetch more"
+        )}
+      </Button>
     </ul>
   );
 }

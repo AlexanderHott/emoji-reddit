@@ -1,10 +1,11 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import MiniCreatePost from "~/components/MiniCreatePost";
 import PostFeed from "~/components/PostFeed";
+import { INFINITE_SCROLL_PAGINATION_RESULTS } from "~/config";
 import { getServerAuthSession } from "~/server/auth";
 import { db } from "~/server/db";
-import { subreddits } from "~/server/db/schema";
+import { posts, subreddits } from "~/server/db/schema";
 
 export default async function SubredditPage({
   params,
@@ -12,9 +13,10 @@ export default async function SubredditPage({
   params: { slug: string };
 }) {
   const { slug } = params;
+  console.log("slug", slug);
   const session = await getServerAuthSession();
   const subreddit = await db.query.subreddits.findFirst({
-    where: eq(subreddits.name, slug),
+    // where: eq(subreddits.name, slug),
     with: {
       posts: {
         with: {
@@ -23,8 +25,9 @@ export default async function SubredditPage({
           votes: true,
           subreddit: true,
         },
+        orderBy: desc(posts.createdAt),
 
-        limit: 2, // TODO: magic number
+        limit: INFINITE_SCROLL_PAGINATION_RESULTS, // TODO: magic number
       },
     },
   });
@@ -37,7 +40,11 @@ export default async function SubredditPage({
         r/{subreddit.name}
       </h1>
       <MiniCreatePost session={session} />
-      <PostFeed initialPosts={subreddit.posts} subredditName={subreddit.name} />
+      <PostFeed
+        subredditId={subreddit.id}
+        initialPosts={subreddit.posts}
+        subredditName={subreddit.name}
+      />
     </>
   );
 }

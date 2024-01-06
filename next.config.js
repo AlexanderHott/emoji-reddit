@@ -10,6 +10,7 @@ const config = {
     remotePatterns: [
       { hostname: "lh3.googleusercontent.com" },
       { hostname: "uploadthing.com" },
+      { hostname: "utfs.io" },
     ],
   },
   // TODO: re-enable when done

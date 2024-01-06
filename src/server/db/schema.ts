@@ -83,7 +83,7 @@ export const posts = mysqlTable("post", {
     .$defaultFn(() => nanoid()),
   title: varchar("title", { length: 255 }).notNull().unique(),
   content: json("content"),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
   // updatedAt: timestamp("updated_at").default(
   //   sql`CURRENT_TIMESTAMP(3) on update CURRENT_TIMESTAMP(3)`,
   // ),
@@ -114,7 +114,7 @@ export const postVotes = mysqlTable(
   {
     userId: varchar("user_id", { length: 255 }).notNull(),
     postId: varchar("post_id", { length: 255 }).notNull(),
-    type: mysqlEnum("type", VOTE_OPTIONS),
+    type: mysqlEnum("type", VOTE_OPTIONS).notNull(),
   },
   (postVote) => ({
     compoundKey: primaryKey(postVote.userId, postVote.postId),
@@ -173,7 +173,7 @@ export const commentVotes = mysqlTable(
   {
     userId: varchar("user_id", { length: 255 }).notNull(),
     commentId: varchar("comment_id", { length: 255 }).notNull(),
-    type: mysqlEnum("type", VOTE_OPTIONS),
+    type: mysqlEnum("type", VOTE_OPTIONS).notNull(),
   },
   (commentVote) => ({
     compoundKey: primaryKey(commentVote.userId, commentVote.commentId),
