@@ -7,7 +7,7 @@ import type {
   User,
 } from "~/server/db/schema";
 import { useIntersection } from "@mantine/hooks";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react";
@@ -15,6 +15,7 @@ import Post from "~/components/Post";
 import { Loader2 } from "lucide-react";
 import { INFINITE_SCROLL_PAGINATION_RESULTS } from "~/config";
 import { Button } from "./ui/button";
+import { useInView } from "react-intersection-observer";
 
 export type ExtendedPost = PostT & {
   subreddit: Subreddit;
@@ -32,11 +33,12 @@ export default function PostFeed({
   subredditName: string;
   subredditId: string;
 }) {
-  const lastPostRef = useRef<HTMLLIElement>(null);
-  const { ref, entry } = useIntersection({
-    root: lastPostRef.current,
-    threshold: 1,
-  });
+  // const lastPostRef = useRef<HTMLLIElement>(null);
+  // const { ref, entry } = useIntersection({
+  //   root: lastPostRef.current,
+  //   threshold: 1,
+  // });
+  const { ref, inView, entry } = useInView({ threshold: 1 });
   const { data, fetchNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ["infinite-query"],
     queryFn: async ({ pageParam }) => {
@@ -45,6 +47,9 @@ export default function PostFeed({
         (!!subredditId ? `&subredditId=${subredditId}` : "");
 
       const { data } = await axios.get<ExtendedPost[]>(query);
+      if (data.length === 0) {
+        setLastPageWasEmpty(true);
+      }
       return data;
     },
     getNextPageParam: (_, pages) => {
@@ -53,7 +58,20 @@ export default function PostFeed({
     initialPageParam: 1,
     initialData: { pages: [initialPosts], pageParams: [1] },
   });
+  const [lastPageWasEmpty, setLastPageWasEmpty] = useState(false);
   const { data: session } = useSession();
+  useEffect(() => {
+    console.log("fetching more posts", entry?.isIntersecting);
+    console.log("ref", ref);
+    if (entry?.isIntersecting && !isFetchingNextPage && !lastPageWasEmpty) {
+      void fetchNextPage();
+    }
+  }, [
+    fetchNextPage,
+    isFetchingNextPage,
+    entry?.isIntersecting,
+    lastPageWasEmpty,
+  ]);
 
   const posts = data?.pages.flat() ?? initialPosts;
   return (
@@ -72,7 +90,7 @@ export default function PostFeed({
         if (index === posts.length - 1) {
           // Add a ref to the last post in the list
           return (
-            <li key={post.id} ref={lastPostRef}>
+            <li key={post.id} ref={ref}>
               <Post
                 post={post}
                 commentAmt={post.comments.length}
@@ -101,13 +119,15 @@ export default function PostFeed({
           <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
         </li>
       )}*/}
-      <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
-        {isFetchingNextPage ? (
-          <Loader2 className="h-4 w-4 animate-spin text-white" />
-        ) : (
-          "Fetch more"
-        )}
-      </Button>
+      {!lastPageWasEmpty && (
+        <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+          {isFetchingNextPage ? (
+            <Loader2 className="h-4 w-4 animate-spin text-white" />
+          ) : (
+            "Fetch more"
+          )}
+        </Button>
+      )}
     </ul>
   );
 }

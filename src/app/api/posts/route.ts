@@ -64,7 +64,12 @@ export async function GET(req: Request) {
     });
     return new Response(JSON.stringify(feedPosts));
   } catch (error) {
-    console.log("error infinite scroll", error);
-    return new Response("error", { status: 500 });
+    if (error instanceof z.ZodError) {
+      return new Response(error.message, { status: 400 });
+    }
+
+    return new Response("Could not fetch more posts, please try again later", {
+      status: 500,
+    });
   }
 }
