@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { type CachedPost } from "global";
+import { type CachedPost } from "~/types";
 import { z } from "zod";
 import { redis } from "~/lib/redis";
 import { PostVoteValidator } from "~/lib/validators/vote";
